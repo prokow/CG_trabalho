@@ -42,7 +42,7 @@ int WINAPI Poligono(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     if (!RegisterClassEx(&wcex)) return 0;
 
     // Criar janela principal
-    hwnd = CreateWindowEx(0, TEXT("GLSample"), TEXT("OpenGL 3D Pyramid (C++)"),
+    hwnd = CreateWindowEx(0, TEXT("GLSample"), TEXT("Atividade 4 - Desenho de Poligono 3D"),
                           WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
                           800, 800, nullptr, nullptr, hInstance, nullptr);
 
@@ -208,7 +208,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     if (!RegisterClassEx(&wcex)) return 0;
 
     // Criar janela principal
-    hwnd = CreateWindowEx(0, TEXT("GLSample"), TEXT("OpenGL 3D Pyramid (C++)"),
+    hwnd = CreateWindowEx(0, TEXT("GLSample"), TEXT("Atividade 5 - Preenchimento de Poligono 3D"),
                           WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
                           800, 800, nullptr, nullptr, hInstance, nullptr);
 

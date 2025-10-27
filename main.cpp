@@ -222,12 +222,12 @@ void cohenSutherlandClipAndDraw(
 
 
 int main(){
-    sf::Vector2u windowSize(1280, 800);
+    sf::Vector2u windowSize(950, 800);
     sf::RenderWindow window(sf::VideoMode(windowSize), "Trabalho 1 - Computacao Grafica");
     window.setFramerateLimit(60);
 
     sf::Font font;
-    if (!font.openFromFile("./Fontes/data-unifon.ttf")) {
+    if (!font.openFromFile("./Fontes/data-latin.ttf")) {
         std::cout << "Erro ao carregar a fonte." << std::endl;
         return -1;
     }
@@ -478,6 +478,7 @@ int main(){
         else if(atividadeAtual == 4){
             return Poligono(hInstance, nullptr, nullptr, SW_SHOWNORMAL);
         }
+        
         else if(atividadeAtual == 5){
             return WinMain(hInstance, nullptr, nullptr, SW_SHOWNORMAL);
         }
