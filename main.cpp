@@ -6,34 +6,82 @@
 #include <iterator> // Para std::istreambuf_iterator
 #include <variant>
 #include <sstream> // Necessário para construir o menu
+#include <string>
+
+#include "Poligono.cpp"
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
 using namespace std;
 
 // --- Atividade 2: Implementação do Algoritmo de Reta (Bresenham) ---
 void drawLineBresenham(sf::RenderWindow& window, int x1, int y1, int x2, int y2, const sf::Color& color)
 {
-    // (Seu código de Bresenham - sem alterações)
+    // --- MUDANÇA: Salva as coordenadas originais ---
+    const int x1_original = x1;
+    const int y1_original = y1;
+    // (x2 e y2 não são modificados, então estão seguros)
+
     sf::VertexArray linePoints(sf::PrimitiveType::Points);
+
     int dx =  std::abs(x2 - x1);
     int sx = x1 < x2 ? 1 : -1;
-    int dy = std::abs(y2 - y1);
-    int sy = y1 < y2 ? 1 : -1;
-    int error = dx - dy;
+    int dy = -std::abs(y2 - y1);
+    int sy = y1 < y2 ? 1 : -1; 
+    int error = dx + dy;
     int e2;
+
     while (true)
     {
         sf::Vertex vertex;
         vertex.position = sf::Vector2f(static_cast<float>(x1), static_cast<float>(y1));
         vertex.color = color;
         linePoints.append(vertex);
+
         if (x1 == x2 && y1 == y2) break;
         e2 = 2 * error;
-        if (e2 > -dy) { error -= dy; x1 += sx; }
-        if (e2 < dx) { error += dx; y1 += sy; }
+        if (e2 >= dy)
+        {
+            error += dy;
+            x1 += sx; // <-- x1 é modificado aqui
+        }
+        if (e2 <= dx)
+        {
+            error += dx;
+            y1 += sy; // <-- y1 é modificado aqui
+        }
     }
+
+    // 1. Desenha a linha (os pixels) de uma só vez
     window.draw(linePoints);
+
+    // --- Bloco dos Marcadores (agora usa as coordenadas salvas) ---
+    
+    float markerRadius = 4.f; 
+    sf::Color markerFillColor = sf::Color::White;
+    
+    // 3. Cria e desenha o marcador de INÍCIO
+    sf::CircleShape startMarker(markerRadius);
+    startMarker.setOrigin(sf::Vector2f(markerRadius, markerRadius)); 
+    startMarker.setPosition(sf::Vector2f(static_cast<float>(x1_original), static_cast<float>(y1_original))); // <-- Usa as originais
+    startMarker.setFillColor(markerFillColor);
+    startMarker.setOutlineColor(color); 
+    startMarker.setOutlineThickness(1.f);
+    window.draw(startMarker);
+
+    // 4. Cria e desenha o marcador de FIM
+    sf::CircleShape endMarker(markerRadius);
+    endMarker.setOrigin(sf::Vector2f(markerRadius, markerRadius)); 
+    endMarker.setPosition(sf::Vector2f(static_cast<float>(x2), static_cast<float>(y2))); // y2 e x2 nunca mudaram
+    endMarker.setFillColor(markerFillColor);
+    endMarker.setOutlineColor(color);
+    endMarker.setOutlineThickness(1.f);
+    window.draw(endMarker);
 }
 
+
+// --- Função Auxiliar: Desenha uma grade com rótulos ---
 void drawGrid(sf::RenderWindow& surface, sf::Font& font, const sf::Color& color, int step, const sf::Color& font_color)
 {
     float width = static_cast<float>(surface.getSize().x);
@@ -72,8 +120,108 @@ void drawGrid(sf::RenderWindow& surface, sf::Font& font, const sf::Color& color,
 }
 
 
-int main(){
 
+
+// --- Constantes para a Atividade 3 (Cohen-Sutherland) ---
+// Usamos bits para definir as 4 regiões
+const int INSIDE = 0; // 0000
+const int LEFT = 1;   // 0001
+const int RIGHT = 2;  // 0010
+const int BOTTOM = 4; // 0100
+const int TOP = 8;    // 1000
+
+// --- Atividade 3: Função Auxiliar para calcular o "OutCode" ---
+// Esta função descobre em qual região um ponto (x, y) está.
+// Note que em SFML, Y cresce para baixo (y_min é o topo, y_max é o fundo)
+int computeOutCode(double x, double y, double xmin, double ymin, double xmax, double ymax)
+{
+    int code = INSIDE; // Começa assumindo que está dentro
+
+    if (x < xmin)      // À esquerda da janela
+        code |= LEFT;
+    else if (x > xmax) // À direita da janela
+        code |= RIGHT;
+    if (y < ymin)      // Acima da janela
+        code |= TOP;
+    else if (y > ymax) // Abaixo da janela
+        code |= BOTTOM;
+
+    return code;
+}
+
+// --- Atividade 3: Função "Gerente" (Calcula e Desenha) ---
+// Esta função implementa o algoritmo de Cohen-Sutherland.
+// Ela REUTILIZA sua função drawLineBresenham para o desenho final.
+void cohenSutherlandClipAndDraw(
+    sf::RenderWindow& window, sf::Font& font,
+    double x1, double y1, double x2, double y2, 
+    double xmin, double ymin, double xmax, double ymax,
+    const sf::Color& color)
+{
+    // 1. Calcula os outcodes dos dois pontos
+    int outcode1 = computeOutCode(x1, y1, xmin, ymin, xmax, ymax);
+    int outcode2 = computeOutCode(x2, y2, xmin, ymin, xmax, ymax);
+    bool accept = false;
+
+    while (true) {
+        // Caso 1: Rejeição Trivial (Ambos os pontos na mesma região externa)
+        // (ex: ambos acima, ou ambos à esquerda)
+        if ((outcode1 & outcode2) != 0) {
+            break; // A linha está totalmente fora. Não desenha nada.
+        }
+        
+        // Caso 2: Aceite Trivial (Ambos os pontos dentro da janela)
+        if ((outcode1 | outcode2) == 0) {
+            accept = true;
+            break; // A linha está totalmente dentro.
+        }
+
+        // Caso 3: Recorte Necessário
+        // Pelo menos um ponto está fora.
+        double x = 0, y = 0;
+
+        // Escolhe o ponto que está fora
+        int outcodeOut = (outcode1 != 0) ? outcode1 : outcode2;
+
+        // Calcula o ponto de interseção
+        // (m = (y2-y1) / (x2-x1))
+        if (outcodeOut & TOP) {           // Ponto está acima
+            x = x1 + (x2 - x1) * (ymin - y1) / (y2 - y1);
+            y = ymin;
+        } else if (outcodeOut & BOTTOM) { // Ponto está abaixo
+            x = x1 + (x2 - x1) * (ymax - y1) / (y2 - y1);
+            y = ymax;
+        } else if (outcodeOut & RIGHT) {  // Ponto está à direita
+            y = y1 + (y2 - y1) * (xmax - x1) / (x2 - x1);
+            x = xmax;
+        } else if (outcodeOut & LEFT) {   // Ponto está à esquerda
+            y = y1 + (y2 - y1) * (xmin - x1) / (x2 - x1);
+            x = xmin;
+        }
+
+        // Agora movemos o ponto "externo" para o ponto de interseção
+        if (outcodeOut == outcode1) {
+            x1 = x;
+            y1 = y;
+            outcode1 = computeOutCode(x1, y1, xmin, ymin, xmax, ymax);
+        } else {
+            x2 = x;
+            y2 = y;
+            outcode2 = computeOutCode(x2, y2, xmin, ymin, xmax, ymax);
+        }
+    }
+
+    // 2. Se a linha foi aceita (total ou parcialmente)...
+    if (accept) {
+        // 3. REUTILIZA sua função original para desenhar o resultado!
+        // (Convertemos de volta para int, pois Bresenham espera inteiros)
+        // (Não passamos 'true' para os rótulos, para não poluir a tela)
+        drawLineBresenham(window, static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2), static_cast<int>(y2), color);
+    }
+}
+
+
+int main(){
     sf::Vector2u windowSize(1280, 800);
     sf::RenderWindow window(sf::VideoMode(windowSize), "Trabalho 1 - Computacao Grafica");
     window.setFramerateLimit(60);
@@ -191,6 +339,8 @@ int main(){
     
     int atividadeAtual = 1; 
 
+    HINSTANCE hInstance = GetModuleHandle(nullptr);
+
     while (window.isOpen())
     {
         // (Seu loop de eventos - sem alterações)
@@ -252,7 +402,6 @@ int main(){
         
         // Define a posição do texto com o Y calculado
         text.setPosition(sf::Vector2f(padding, newY));
-        // --- FIM DA MUDANÇA ---
 
 
         // 2. Ajustar o fundo do menu
@@ -293,7 +442,45 @@ int main(){
             drawLineBresenham(window, 50, 300, 750, 300, sf::Color::Blue);    // Horizontal
             drawLineBresenham(window, 400, 50, 400, 550, sf::Color::Yellow);
         }
-        // ... (outros 'else if' para atividades 3, 4, 5) ...
+        else if (atividadeAtual == 3){
+            // 1. REUTILIZA sua função de grade
+            drawGrid(window, font, sf::Color(50, 50, 50), 50, sf::Color(180, 180, 180));
+
+            // 2. Define e desenha a janela de recorte (um retângulo branco)
+            const double clipXMin = 200, clipYMin = 150;
+            const double clipXMax = 600, clipYMax = 450;
+            
+            sf::RectangleShape clipWindow;
+            clipWindow.setPosition(sf::Vector2f(clipXMin, clipYMin));
+            clipWindow.setSize(sf::Vector2f(clipXMax - clipXMin, clipYMax - clipYMin));
+            clipWindow.setFillColor(sf::Color::Transparent);
+            clipWindow.setOutlineColor(sf::Color::White);
+            clipWindow.setOutlineThickness(2.f);
+            window.draw(clipWindow);
+
+            // 3. Chama a função de recorte para várias linhas de teste
+            
+            // Linha 1: Totalmente dentro (Aceite Trivial)
+            cohenSutherlandClipAndDraw(window, font, 250, 200, 550, 400, clipXMin, clipYMin, clipXMax, clipYMax, sf::Color::Green);
+            
+            // Linha 2: Totalmente fora, acima (Rejeição Trivial)
+            cohenSutherlandClipAndDraw(window, font, 250, 50, 550, 100, clipXMin, clipYMin, clipXMax, clipYMax, sf::Color::Red);
+            
+            // Linha 3: Totalmente fora, à esquerda (Rejeição Trivial)
+            cohenSutherlandClipAndDraw(window, font, 50, 200, 150, 400, clipXMin, clipYMin, clipXMax, clipYMax, sf::Color::Red);
+            
+            // Linha 4: Cruzando (Recorte Necessário)
+            cohenSutherlandClipAndDraw(window, font, 100, 100, 700, 500, clipXMin, clipYMin, clipXMax, clipYMax, sf::Color::Yellow);
+            
+            // Linha 5: Cruzando (Recorte Necessário)
+            cohenSutherlandClipAndDraw(window, font, 300, 500, 500, 100, clipXMin, clipYMin, clipXMax, clipYMax, sf::Color::Magenta);
+        }
+        else if(atividadeAtual == 4){
+            return Poligono(hInstance, nullptr, nullptr, SW_SHOWNORMAL);
+        }
+        else if(atividadeAtual == 5){
+            return WinMain(hInstance, nullptr, nullptr, SW_SHOWNORMAL);
+        }
 
         // --- MUDANÇA: Desenhar o fundo e DEPOIS o texto ---
         window.draw(menuBackground); // 3. Desenha o retângulo PRIMEIRO
