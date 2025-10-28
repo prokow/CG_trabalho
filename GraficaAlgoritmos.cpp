@@ -114,8 +114,6 @@ void drawGrid(sf::RenderWindow& surface, sf::Font& font, const sf::Color& color,
 }
 
 
-
-
 // Constantes para a Atividade 3 (Cohen-Sutherland) 
 // É Usado bits para definir as 4 regiões
 const int INSIDE = 0; // 0000
