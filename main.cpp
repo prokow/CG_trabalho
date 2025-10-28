@@ -84,13 +84,13 @@ int main(){
         std::ostringstream menuStream;
         menuStream << " pressione um numero para escolher:\n";
         menuStream << "1. primitivas graficas " << (atividadeAtual == 1 ? "(X)" : "") << "\n";
-        menuStream << "2. algoritmo de bresenham " << (atividadeAtual == 2 ? "(X)" : "") << "\n";
+        menuStream << "2. ponto medio para retas " << (atividadeAtual == 2 ? "(X)" : "") << "\n";
         menuStream << "3. recorte cohen-Sutherland " << (atividadeAtual == 3 ? "(X)" : "") << "\n";
         menuStream << "4. desenha poligono (opengl) " << (atividadeAtual == 4 ? "(X)" : "") << "\n";
         menuStream << "5. preenchimento poligono (opengl) " << (atividadeAtual == 5 ? "(X)" : "");
         text.setString(menuStream.str()); // Atualiza o texto do menu
 
-        // -- Cálculo Dinâmico da Posição do Menu (para ficar sempre no canto inferior esquerdo)--
+        // Cálculo Dinâmico da Posição do Menu (para ficar sempre no canto inferior esquerdo)--
         float padding = 10.f; // Nosso espaçamento da borda
 
         // getLocalBounds nos dá o tamanho real do bloco de texto
