@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <iostream>  // C++ I/O
+#include <iostream>  
 
 LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 //Configura o contexto de renderização OpenGL para a janela especificada.

@@ -5,6 +5,11 @@
             "label": "C/C++: g++.exe arquivo de build ativo",
             "command": "C:\\mingw64\\bin\\g++.exe",
             "args": [
+                "main.cpp",
+                "GraficaAlgoritmos.cpp",
+                "Poligono.cpp",
+                "PrimitivaGraficas;cpp",
+
                 "-fdiagnostics-color=always",
                 "-g",
                 "-IC:\\SFML-3.0.2_mingw64\\include",
